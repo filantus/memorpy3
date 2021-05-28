@@ -42,13 +42,17 @@ class BaseProcess:
     def read(self, address, type="uint", maxlen=50, errors="raise"):
         if type == "s" or type == "string":
             s = self.read_bytes(int(address), bytes=maxlen)
-            news = ""
+
+            news = ''
             for c in s:
-                if c == "\x00":
+                c = chr(c)
+                if c == '\x00':
                     return news
                 news += c
+
             if errors == "ignore":
                 return news
+
             raise ProcessException("string > maxlen")
         else:
             if type == "bytes" or type == "b":

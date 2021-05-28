@@ -92,7 +92,7 @@ class WinProcess(BaseProcess):
         PROCESS_VM_READ = 0x0010
 
         psapi.EnumProcesses(byref(lpidProcess), cb, byref(cbNeeded))
-        nReturned = cbNeeded.value / sizeof(c_ulong())
+        nReturned = cbNeeded.value // sizeof(c_ulong())
 
         pidProcess = [i for i in lpidProcess][:nReturned]
         for pid in pidProcess:
@@ -113,12 +113,17 @@ class WinProcess(BaseProcess):
         return processes
 
     @staticmethod
-    def processes_from_name(processName):
+    def processes_from_name(process_name):
         processes = []
         for process in WinProcess.list():
-            if processName == process.get("name", None) or (
-                process.get("name", "").lower().endswith(".exe")
-                and process.get("name", "")[:-4] == processName
+            iter_process_name: bytes = process.get('name', None)
+            if not iter_process_name:
+                continue
+
+            iter_process_name: str = iter_process_name.decode()
+
+            if process_name == iter_process_name or (
+                    iter_process_name.lower().endswith('.exe') and iter_process_name[:-4] == process_name
             ):
                 processes.append(process)
 

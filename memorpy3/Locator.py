@@ -18,7 +18,7 @@ import copy
 import time
 import struct
 
-from Address import Address
+from memorpy3.Address import Address
 
 
 class Locator:
