@@ -5,7 +5,7 @@ Python 3 port of memorypy library using ctypes to search/edit windows programs m
 ## install
 
 ```
-pip install memorpy3
+pip install https://github.com/filantus/memorpy3/archive/master.zip
 ```
 
 ## usage examples :
@@ -14,16 +14,16 @@ In this example open a notepad.exe and type in some text we will edit from memor
 
 ```python
 >>> from memorpy3.MemWorker import MemWorker
->>> mw=MemWorker(pid=3856) #you can also select a process by its name with the kwarg name=
->>> l=[x for x in mw.umem_search("hello")]
+>>> mw = MemWorker(pid=3856) # you can also select a process by its name with the kwarg name=
+>>> l = [x for x in mw.umem_search("hello")]
 >>> l
 [('', <Addr: 0x003287B0>)]
->>> a=l[0][1]
+>>> a = l[0][1]
 >>> a
 <Addr: 0x003287B0>
 >>> a+4
 <Addr: 0x003287B4>
->>> print a
+>>> print(a)
 <Addr: 0x003287B0 : "h\x00e\x00l\x00l\x00o\x00 \x00t\x00h\x00i\x00s\x00 \x00i\x00s\x00 \x00a\x00 \x00m\x00e\x00s\x00s\x00a\x00g\x00e\x00 \x00I\x00" (bytes)>
 >>> a.dump()
 00328790: 46 00 72 00 61 00 6E 00 63 00 65 00 29 00 00 00  F.r.a.n.c.e.)...
@@ -70,7 +70,7 @@ Look back at your notepad and the text should be changed ! :)
 A quicker way to do this could be :
 
 ```python
->>> mw.umem_replace("hello","pwned")
+>>> mw.umem_replace("hello", "pwned")
 ```
 
 Some other interesting features like searching for different values types in memory and monitor their changes are also implemented through the Locator class. For example if you are looking to cheat in a game and you start with 200 ammo, you could do something like :
@@ -97,11 +97,22 @@ Use some ammo and "refeed" the locator (do this a couple of times until there is
  'uint': [],
  'ulong': [],
  'ushort': []}
->>> a=_["int"][0]
+>>> a = _["int"][0]
 >>> a.read()
 199
 >>>a.write(999999)
 1
+```
+
+Locator also can receive a multiple value pattern
+
+```python
+>>> lo = Locator(mw, type='int')
+>>> # there 100 is max value of some stat (health for example)
+>>> # 0 is some empty space in memory (4 bits in that case)
+>>> # 86 is current value of some stat
+>>> pattern = (100, 0, 86)
+>>> lo.feed(pattern)
 ```
 
 ## Cutting a release
