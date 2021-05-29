@@ -33,6 +33,7 @@ from ctypes import (
     c_longlong,
 )
 from ctypes.wintypes import *
+from dataclasses import dataclass
 
 if sizeof(c_void_p) == 8:
     ULONG_PTR = c_ulonglong
@@ -116,17 +117,52 @@ class PROCESSENTRY32(Structure):
 
 class MODULEENTRY32(Structure):
     _fields_ = [
-        ("dwSize", c_uint),
-        ("th32ModuleID", c_uint),
-        ("th32ProcessID", c_uint),
-        ("GlblcntUsage", c_uint),
-        ("ProccntUsage", c_uint),
-        ("modBaseAddr", c_uint),
-        ("modBaseSize", c_uint),
-        ("hModule", c_uint),
+        ("dwSize", DWORD),
+        ("th32ModuleID", DWORD),
+        ("th32ProcessID", DWORD),
+        ("GlblcntUsage", DWORD),
+        ("ProccntUsage", DWORD),
+        ("modBaseAddr", POINTER(BYTE)),
+        ("modBaseSize", DWORD),
+        ("hModule", HMODULE),
         ("szModule", c_char * 256),
         ("szExePath", c_char * 260),
     ]
+
+
+@dataclass
+class ModuleEntry32:
+    """https://docs.microsoft.com/ru-ru/windows/win32/api/tlhelp32/ns-tlhelp32-moduleentry32"""
+
+    # The module name.
+    name: str
+
+    # The module path.
+    path: str
+
+    # This member is no longer used, and is always set to one.
+    module_id: int
+
+    # The identifier of the process whose modules are to be examined.
+    process_id: int
+
+    # A handle to the module in the context of the owning process.
+    handle: int
+
+    # The base address of the module in the context of the owning process.
+    base_addr: int
+
+    # The size of the module, in bytes.
+    base_size: int
+
+    # The size of the structure, in bytes. Before calling the Module32First function,
+    # set this member to sizeof(MODULEENTRY32).
+    # If you do not initialize dwSize, Module32First fails.
+    dw_size: int
+
+    # The load count of the module (same as GlblcntUsage), which is not generally meaningful,
+    # and usually equal to 0xFFFF.
+    load_count: int
 
 
 class THREADENTRY32(Structure):
