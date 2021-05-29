@@ -185,7 +185,11 @@ class MemWorker:
             and ftype != "lambda"
         ):
             structtype, structlen = utils.type_unpack(ftype)
-            value = struct.pack(structtype, value)
+
+            if isinstance(value, (tuple, list)):
+                value = b''.join([struct.pack(structtype, v) for v in value])
+            else:
+                value = struct.pack(structtype, value)
 
         # different functions avoid if statement before parsing the buffer
         if ftype == "re":
@@ -199,14 +203,14 @@ class MemWorker:
 
         elif ftype == "float":
             func = self.parse_float_function
-        elif ftype == "lambda":  # use a custm function
+        elif ftype == "lambda":  # use a custom function
             func = value
         else:
             func = self.parse_any_function
 
         if not self.process.isProcessOpen:
             raise ProcessException(
-                "Can't read_bytes, process %s is not open" % (self.process.pid)
+                "Can't read_bytes, process %s is not open" % self.process.pid
             )
 
         for offset, chunk_size in self.process.iter_region(
