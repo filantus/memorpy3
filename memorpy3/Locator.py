@@ -92,12 +92,13 @@ class Locator:
         last = self.last_iteration
         new = self.feed(self.last_value, erase_last=erase_last)
         ret = {}
-        for type, l in last.iteritems():
-            typeset = set(new[type])
+
+        for _type, l in iter(last.items()):
+            typeset = set([int(a) for a in new[_type]])
             for addr in l:
-                if addr not in typeset:
-                    if type not in ret:
-                        ret[type] = []
-                    ret[type].append(addr)
+                if int(addr) not in typeset:
+                    if _type not in ret:
+                        ret[_type] = []
+                    ret[_type].append(addr)
 
         return ret
