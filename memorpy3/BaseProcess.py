@@ -2,7 +2,9 @@
 # -*- coding: UTF8 -*-
 
 import struct
+from typing import Union
 
+from .Address import Address
 from .utils import type_unpack
 
 """ Base class for process not linked to any platform """
@@ -39,25 +41,34 @@ class BaseProcess:
     def get_symbolic_name(self, address):
         return "0x%08X" % int(address)
 
-    def read(self, address, data_type="uint", max_len=50, errors="raise"):
-        if data_type == "s" or data_type == "string":
+    def read(self,
+             address: Union[Address, int],
+             data_type: str = 'uint',
+             max_len: int = 50,
+             errors: str = 'raise',
+             encoding: str = 'utf-8',
+             decode_strict: str = 'ignore'):
+
+        if data_type == 's' or data_type == 'string':
             data = self.read_bytes(int(address), length=max_len)
 
             new_data = []
 
             for char in data:
                 if char == ord('\x00'):
-                    return bytes(new_data).decode()
+                    return bytes(new_data).decode(encoding, decode_strict)
 
                 new_data.append(char)
 
-            if errors == "ignore":
+            if errors == 'ignore':
                 return new_data
 
-            raise ProcessException("string > max_len")
+            raise ProcessException('string > max_len')
+
         else:
             if data_type == "bytes" or data_type == "b":
                 return self.read_bytes(int(address), length=max_len)
+
             struct_type, struct_len = type_unpack(data_type)
             return struct.unpack(struct_type, self.read_bytes(int(address), length=struct_len))[0]
 
