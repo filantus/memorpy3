@@ -297,46 +297,47 @@ class WinProcess(BaseProcess):
 
         return res
 
-    def read_bytes(self, address, length=4, use_NtWow64ReadVirtualMemory64=False):
-        # print "reading %s bytes from addr %s"%(bytes, address)
+    def read_bytes(self, address, length: int = 4, use_NtWow64ReadVirtualMemory64: bool = False):
+        # print(f"reading {length} bytes from address {address}")
+
         if use_NtWow64ReadVirtualMemory64:
             if NtWow64ReadVirtualMemory64 is None:
                 raise WindowsError(
                     "NtWow64ReadVirtualMemory64 is not available from a 64bit process"
                 )
-            RpM = NtWow64ReadVirtualMemory64
+            rpm = NtWow64ReadVirtualMemory64
         else:
-            RpM = ReadProcessMemory
+            rpm = ReadProcessMemory
 
         address = int(address)
         buffer = create_string_buffer(length)
-        bytesread = c_size_t(0)
-        data = b""
-        length = length
+        bytes_read = c_size_t(0)
+        data = b''
+
         while length:
-            if RpM(self.h_process, address, buffer, length, byref(bytesread)) or (
+            if rpm(self.h_process, address, buffer, length, byref(bytes_read)) or (
                 use_NtWow64ReadVirtualMemory64 and GetLastError() == 0
             ):
-                if bytesread.value:
-                    data += buffer.raw[: bytesread.value]
-                    length -= bytesread.value
-                    address += bytesread.value
+                if bytes_read.value:
+                    data += buffer.raw[: bytes_read.value]
+                    length -= bytes_read.value
+                    address += bytes_read.value
                 if not len(data):
                     raise ProcessException(
                         "Error %s in ReadProcessMemory(%08x, %d, read=%d)"
-                        % (GetLastError(), address, length, bytesread.value)
+                        % (GetLastError(), address, length, bytes_read.value)
                     )
                 return data
             else:
-                if (
-                    GetLastError() == 299
-                ):  # only part of ReadProcessMemory has been done, let's return it
-                    data += buffer.raw[: bytesread.value]
+                if GetLastError() == 299:  # only part of ReadProcessMemory has been done, let's return it
+                    data += buffer.raw[:bytes_read.value] if bytes_read.value else buffer.raw
+
                     return data
                 raise WinError()
-            # data += buffer.raw[:bytesread.value]
-            # length -= bytesread.value
-            # address += bytesread.value
+            # data += buffer.raw[:bytes_read.value]
+            # length -= bytes_read.value
+            # address += bytes_read.value
+
         return data
 
     def get_modules(self) -> dict[ModuleEntry32]:

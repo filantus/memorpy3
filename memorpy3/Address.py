@@ -80,11 +80,10 @@ class Address:
     def __str__(self):
         if not self.symbolic_name:
             self.symbolic_name = self.symbol()
-        return str(
-            "<Address: %s" % self.symbolic_name
-            + ' : "%s" (%s)>'
-            % (str(self.read()).encode("unicode_escape"), self.default_type)
-        )
+
+        data = self.read()
+        data = data.decode() if isinstance(data, bytes) else data
+        return f'<Address: {self.symbolic_name} : "{data}" ({self.default_type})>'
 
     def __int__(self):
         return int(self.value)

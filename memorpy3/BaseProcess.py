@@ -47,7 +47,8 @@ class BaseProcess:
              max_len: int = 50,
              errors: str = 'raise',
              encoding: str = 'utf-8',
-             decode_strict: str = 'ignore'):
+             decode_errors: str = 'ignore'  # strict / ignore / replace
+             ):
 
         if data_type == 's' or data_type == 'string':
             data = self.read_bytes(int(address), length=max_len)
@@ -56,7 +57,7 @@ class BaseProcess:
 
             for char in data:
                 if char == ord('\x00'):
-                    return bytes(new_data).decode(encoding, decode_strict)
+                    return bytes(new_data).decode(encoding, decode_errors)
 
                 new_data.append(char)
 
@@ -66,7 +67,7 @@ class BaseProcess:
             raise ProcessException('string > max_len')
 
         else:
-            if data_type == "bytes" or data_type == "b":
+            if data_type == 'bytes' or data_type == 'b':
                 return self.read_bytes(int(address), length=max_len)
 
             struct_type, struct_len = type_unpack(data_type)
