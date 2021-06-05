@@ -15,7 +15,6 @@
 # along with memorpy.  If not, see <http://www.gnu.org/licenses/>.
 
 import copy
-import time
 import struct
 
 from memorpy3.Address import Address
@@ -23,13 +22,13 @@ from memorpy3.Address import Address
 
 class Locator:
     """
-    take a memoryworker and a type to search then you can feed the locator
+    take a MemoryWorker and a type to search then you can feed the locator
     with values and it will reduce the addresses possibilities
     """
 
-    def __init__(self, mw, type="unknown", start=None, end=None):
+    def __init__(self, mw, data_type="unknown", start=None, end=None):
         self.mw = mw
-        self.type = type
+        self.type = data_type
         self.last_iteration = {}
         self.last_value = None
         self.start = start
@@ -54,28 +53,29 @@ class Locator:
             ]
         else:
             all_types = [self.type]
-        for type in all_types:
-            if type not in new_iter:
+
+        for data_type in all_types:
+            if data_type not in new_iter:
                 try:
-                    new_iter[type] = [
-                        Address(x, self.mw.process, type)
+                    new_iter[data_type] = [
+                        Address(x, self.mw.process, data_type)
                         for x in self.mw.mem_search(
-                            value, type, start_offset=self.start, end_offset=self.end
+                            value, data_type, start_offset=self.start, end_offset=self.end
                         )
                     ]
                 except struct.error:
-                    new_iter[type] = []
+                    new_iter[data_type] = []
             else:
                 l = []
-                for address in new_iter[type]:
+                for address in new_iter[data_type]:
                     try:
-                        found = self.mw.process.read(address, type)
+                        found = self.mw.process.read(address, data_type)
                         if int(found) == int(value):
-                            l.append(Address(address, self.mw.process, type))
+                            l.append(Address(address, self.mw.process, data_type))
                     except Exception as e:
                         pass
 
-                new_iter[type] = l
+                new_iter[data_type] = l
 
         if erase_last:
             del self.last_iteration
@@ -86,19 +86,19 @@ class Locator:
         return self.last_iteration
 
     def diff(self, erase_last=False):
-        return self.get_modified_addr(erase_last)
+        return self.get_modified_addresses(erase_last)
 
-    def get_modified_addr(self, erase_last=False):
+    def get_modified_addresses(self, erase_last=False):
         last = self.last_iteration
         new = self.feed(self.last_value, erase_last=erase_last)
         ret = {}
 
-        for _type, l in iter(last.items()):
-            typeset = set([int(a) for a in new[_type]])
-            for addr in l:
-                if int(addr) not in typeset:
-                    if _type not in ret:
-                        ret[_type] = []
-                    ret[_type].append(addr)
+        for data_type, l in iter(last.items()):
+            typeset = set([int(a) for a in new[data_type]])
+            for address in l:
+                if int(address) not in typeset:
+                    if data_type not in ret:
+                        ret[data_type] = []
+                    ret[data_type].append(address)
 
         return ret

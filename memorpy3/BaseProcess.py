@@ -19,7 +19,7 @@ class BaseProcess:
         self.pid = None
         self.isProcessOpen = False
         self.buffer = None
-        self.bufferlen = 0
+        self.buffer_len = 0
 
     def __del__(self):
         self.close()
@@ -33,36 +33,37 @@ class BaseProcess:
     def write_bytes(self, address, data):
         raise NotImplementedError
 
-    def read_bytes(self, address, bytes=4):
+    def read_bytes(self, address, length=4):
         raise NotImplementedError
 
     def get_symbolic_name(self, address):
         return "0x%08X" % int(address)
 
-    def read(self, address, type="uint", maxlen=50, errors="raise"):
-        if type == "s" or type == "string":
-            s = self.read_bytes(int(address), bytes=maxlen)
+    def read(self, address, data_type="uint", max_len=50, errors="raise"):
+        if data_type == "s" or data_type == "string":
+            data = self.read_bytes(int(address), length=max_len)
 
-            news = ''
-            for c in s:
-                c = chr(c)
-                if c == '\x00':
-                    return news
-                news += c
+            new_data = []
+
+            for char in data:
+                if char == ord('\x00'):
+                    return bytes(new_data).decode()
+
+                new_data.append(char)
 
             if errors == "ignore":
-                return news
+                return new_data
 
-            raise ProcessException("string > maxlen")
+            raise ProcessException("string > max_len")
         else:
-            if type == "bytes" or type == "b":
-                return self.read_bytes(int(address), bytes=maxlen)
-            s, l = type_unpack(type)
-            return struct.unpack(s, self.read_bytes(int(address), bytes=l))[0]
+            if data_type == "bytes" or data_type == "b":
+                return self.read_bytes(int(address), length=max_len)
+            struct_type, struct_len = type_unpack(data_type)
+            return struct.unpack(struct_type, self.read_bytes(int(address), length=struct_len))[0]
 
-    def write(self, address, data, type="uint"):
-        if type != "bytes":
-            s, l = type_unpack(type)
-            return self.write_bytes(int(address), struct.pack(s, data))
+    def write(self, address, data, data_type="uint"):
+        if data_type != "bytes":
+            struct_type, struct_len = type_unpack(data_type)
+            return self.write_bytes(int(address), struct.pack(struct_type, data))
         else:
             return self.write_bytes(int(address), data)

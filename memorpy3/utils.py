@@ -19,102 +19,91 @@ import struct
 
 
 def re_to_unicode(s):
-    newstring = ""
+    new_string = ""
     for c in s:
-        newstring += re.escape(c) + "\\x00"
+        new_string += re.escape(c) + "\\x00"
 
-    return newstring
+    return new_string
 
 
-def type_unpack(type):
+def type_unpack(data_type):
     """ return the struct and the len of a particular type """
-    type = type.lower()
-    s = None
-    l = None
-    if type == "short":
-        s = "h"
-        l = 2
-    elif type == "ushort":
-        s = "H"
-        l = 2
-    elif type == "int":
-        s = "i"
-        l = 4
-    elif type == "uint":
-        s = "I"
-        l = 4
-    elif type == "long":
-        s = "l"
-        l = 4
-    elif type == "ulong":
-        s = "L"
-        l = 4
-    elif type == "float":
-        s = "f"
-        l = 4
-    elif type == "double":
-        s = "d"
-        l = 8
-    else:
-        raise TypeError("Unknown type %s" % type)
-    return ("<" + s, l)
+    data_type = data_type.lower()
+
+    # data_type: (struct_type, struct_len)
+    data_types = {
+        'short':  ('h', 2),
+        'ushort': ('H', 2),
+        'int':    ('i', 4),
+        'uint':   ('I', 4),
+        'long':   ('l', 4),
+        'ulong':  ('L', 4),
+        'float':  ('f', 4),
+        'double': ('d', 8),
+    }
+
+    if data_type in data_types:
+        struct_type, struct_len = data_types[data_type]
+        return f'<{struct_type}', struct_len
+
+    raise TypeError(f'Unknown data type: {data_type}')
 
 
-def hex_dump(data, addr=0, prefix="", ftype="bytes"):
+def hex_dump(data, address=0, prefix="", ftype="bytes"):
     """
     function originally from pydbg, modified to display other types
     """
     dump = prefix
-    slice = ""
+    data_slice = ""
     if ftype != "bytes":
-        structtype, structlen = type_unpack(ftype)
-        for i in range(0, len(data), structlen):
-            if addr % 16 == 0:
+        struct_type, struct_len = type_unpack(ftype)
+        for i in range(0, len(data), struct_len):
+            if address % 16 == 0:
                 dump += " "
-                for char in slice:
-                    if ord(char) >= 32 and ord(char) <= 126:
+                for char in data_slice:
+                    if 32 <= ord(char) <= 126:
                         dump += char
                     else:
                         dump += "."
 
-                dump += "\n%s%08X: " % (prefix, addr)
-                slice = ""
-            tmpval = "NaN"
+                dump += "\n%s%08X: " % (prefix, address)
+                data_slice = ""
+            tmp_val = "NaN"
             try:
-                packedval = data[i : i + structlen]
-                tmpval = struct.unpack(structtype, packedval)[0]
+                packed_val = data[i: i + struct_len]
+                tmp_val = struct.unpack(struct_type, packed_val)[0]
             except Exception as e:
                 print(e)
 
-            if tmpval == "NaN":
-                dump += "{:<15} ".format(tmpval)
+            if tmp_val == "NaN":
+                dump += "{:<15} ".format(tmp_val)
             elif ftype == "float":
-                dump += "{:<15.4f} ".format(tmpval)
+                dump += "{:<15.4f} ".format(tmp_val)
             else:
-                dump += "{:<15} ".format(tmpval)
-            addr += structlen
+                dump += "{:<15} ".format(tmp_val)
+            address += struct_len
 
     else:
         for byte in data:
-            if addr % 16 == 0:
+            if address % 16 == 0:
                 dump += " "
-                for char in slice:
-                    if ord(char) >= 32 and ord(char) <= 126:
+                for char in data_slice:
+                    if 32 <= ord(char) <= 126:
                         dump += char
                     else:
                         dump += "."
 
-                dump += "\n%s%08X: " % (prefix, addr)
-                slice = ""
+                dump += "\n%s%08X: " % (prefix, address)
+                data_slice = ""
             dump += "%02X " % ord(byte)
-            slice += byte
-            addr += 1
+            data_slice += byte
+            address += 1
 
-    remainder = addr % 16
+    remainder = address % 16
     if remainder != 0:
         dump += "   " * (16 - remainder) + " "
-    for char in slice:
-        if ord(char) >= 32 and ord(char) <= 126:
+    for char in data_slice:
+        if 32 <= ord(char) <= 126:
             dump += char
         else:
             dump += "."

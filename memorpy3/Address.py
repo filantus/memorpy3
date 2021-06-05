@@ -30,28 +30,28 @@ class Address:
         self.default_type = default_type
         self.symbolic_name = None
 
-    def read(self, type=None, maxlen=None, errors="raise"):
-        if maxlen is None:
+    def read(self, data_type=None, max_len=None, errors="raise"):
+        if max_len is None:
             try:
-                int(type)
-                maxlen = int(type)
-                type = None
-            except:
+                int(data_type)
+                max_len = int(data_type)
+                data_type = None
+            except TypeError:
                 pass
 
-        if not type:
-            type = self.default_type
-        if not maxlen:
-            return self.process.read(self.value, type=type, errors=errors)
+        if not data_type:
+            data_type = self.default_type
+        if not max_len:
+            return self.process.read(self.value, data_type=data_type, errors=errors)
         else:
             return self.process.read(
-                self.value, type=type, maxlen=maxlen, errors=errors
+                self.value, data_type=data_type, max_len=max_len, errors=errors
             )
 
-    def write(self, data, type=None):
-        if not type:
-            type = self.default_type
-        return self.process.write(self.value, data, type=type)
+    def write(self, data, data_type=None):
+        if not data_type:
+            data_type = self.default_type
+        return self.process.write(self.value, data, data_type=data_type)
 
     def symbol(self):
         return self.process.get_symbolic_name(self.value)
@@ -75,13 +75,13 @@ class Address:
     def __repr__(self):
         if not self.symbolic_name:
             self.symbolic_name = self.symbol()
-        return str("<Addr: %s" % self.symbolic_name + ">")
+        return str("<Address: %s" % self.symbolic_name + ">")
 
     def __str__(self):
         if not self.symbolic_name:
             self.symbolic_name = self.symbol()
         return str(
-            "<Addr: %s" % self.symbolic_name
+            "<Address: %s" % self.symbolic_name
             + ' : "%s" (%s)>'
             % (str(self.read()).encode("unicode_escape"), self.default_type)
         )

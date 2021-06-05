@@ -297,7 +297,7 @@ class WinProcess(BaseProcess):
 
         return res
 
-    def read_bytes(self, address, bytes=4, use_NtWow64ReadVirtualMemory64=False):
+    def read_bytes(self, address, length=4, use_NtWow64ReadVirtualMemory64=False):
         # print "reading %s bytes from addr %s"%(bytes, address)
         if use_NtWow64ReadVirtualMemory64:
             if NtWow64ReadVirtualMemory64 is None:
@@ -309,12 +309,12 @@ class WinProcess(BaseProcess):
             RpM = ReadProcessMemory
 
         address = int(address)
-        buffer = create_string_buffer(bytes)
+        buffer = create_string_buffer(length)
         bytesread = c_size_t(0)
         data = b""
-        length = bytes
+        length = length
         while length:
-            if RpM(self.h_process, address, buffer, bytes, byref(bytesread)) or (
+            if RpM(self.h_process, address, buffer, length, byref(bytesread)) or (
                 use_NtWow64ReadVirtualMemory64 and GetLastError() == 0
             ):
                 if bytesread.value:
