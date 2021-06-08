@@ -86,7 +86,7 @@ class WinProcess(BaseProcess):
     @staticmethod
     def list():
         processes = []
-        arr = c_ulong * 256
+        arr = c_ulong * 1024
         lpidProcess = arr()
         cb = sizeof(lpidProcess)
         cbNeeded = c_ulong()
