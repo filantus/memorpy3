@@ -87,45 +87,45 @@ class WinProcess(BaseProcess):
     def list():
         processes = []
         arr = c_ulong * 1024
-        lpidProcess = arr()
-        cb = sizeof(lpidProcess)
-        cbNeeded = c_ulong()
-        hModule = c_ulong()
+        l_pid_process = arr()
+        cb = sizeof(l_pid_process)
+        cb_needed = c_ulong()
+        h_module = c_ulong()
         count = c_ulong()
         modname = create_string_buffer(100)
         PROCESS_QUERY_INFORMATION = 0x0400
         PROCESS_VM_READ = 0x0010
 
-        psapi.EnumProcesses(byref(lpidProcess), cb, byref(cbNeeded))
-        nReturned = cbNeeded.value // sizeof(c_ulong())
+        psapi.EnumProcesses(byref(l_pid_process), cb, byref(cb_needed))
+        n_returned = cb_needed.value // sizeof(c_ulong())
 
-        pidProcess = [i for i in lpidProcess][:nReturned]
-        for pid in pidProcess:
-            proc = {"pid": int(pid)}
-            hProcess = kernel32.OpenProcess(
-                PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, False, pid
-            )
-            if hProcess:
+        pid_process = [i for i in l_pid_process][:n_returned]
+        for pid in pid_process:
+            proc = {'pid': int(pid)}
+            h_process = kernel32.OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ, False, pid)
+
+            if h_process:
                 psapi.EnumProcessModules(
-                    hProcess, byref(hModule), sizeof(hModule), byref(count)
+                    h_process, byref(h_module), sizeof(h_module), byref(count)
                 )
                 psapi.GetModuleBaseNameA(
-                    hProcess, hModule.value, modname, sizeof(modname)
+                    h_process, h_module.value, modname, sizeof(modname)
                 )
-                proc["name"] = modname.value
-                kernel32.CloseHandle(hProcess)
+
+                proc['name']: str = modname.value.decode()
+                kernel32.CloseHandle(h_process)
+
             processes.append(proc)
+
         return processes
 
     @staticmethod
     def processes_from_name(process_name):
         processes = []
         for process in WinProcess.list():
-            iter_process_name: bytes = process.get('name', None)
+            iter_process_name: str = process.get('name', None)
             if not iter_process_name:
                 continue
-
-            iter_process_name: str = iter_process_name.decode()
 
             if process_name == iter_process_name or (
                     iter_process_name.lower().endswith('.exe') and iter_process_name[:-4] == process_name
@@ -344,17 +344,17 @@ class WinProcess(BaseProcess):
         modules: dict[ModuleEntry32] = {}
 
         if self.pid is not None:
-            hModuleSnap = CreateToolhelp32Snapshot(TH32CS_CLASS.SNAPMODULE | TH32CS_CLASS.SNAPMODULE32, self.pid)
+            h_module_snap = CreateToolhelp32Snapshot(TH32CS_CLASS.SNAPMODULE | TH32CS_CLASS.SNAPMODULE32, self.pid)
 
-            if hModuleSnap is not None:
+            if h_module_snap is not None:
                 module_entry = MODULEENTRY32()
                 module_entry.dwSize = sizeof(module_entry)
 
-                success = Module32First(hModuleSnap, pointer(module_entry))
+                success = Module32First(h_module_snap, pointer(module_entry))
                 while success:
                     modules[module_entry.szModule.decode()] = ModuleEntry32(
                         name=module_entry.szModule.decode(),
-                        path=module_entry.szExePath,
+                        path=module_entry.szExePath.decode(),
                         module_id=module_entry.th32ModuleID,
                         process_id=module_entry.th32ProcessID,
                         handle=module_entry.hModule,
@@ -363,9 +363,9 @@ class WinProcess(BaseProcess):
                         dw_size=module_entry.dwSize,
                         load_count=module_entry.ProccntUsage,
                     )
-                    success = Module32Next(hModuleSnap, pointer(module_entry))
+                    success = Module32Next(h_module_snap, pointer(module_entry))
 
-                kernel32.CloseHandle(hModuleSnap)
+                kernel32.CloseHandle(h_module_snap)
 
         return modules
 
